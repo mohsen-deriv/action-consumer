@@ -1,0 +1,46 @@
+name: Create PR
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "dist/**"
+
+jobs:
+  pull-request:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18.x]
+    steps:
+      - name: Get Time
+        id: time
+        uses: nanzm/get-time-action@master
+        with:
+          timeZone: UTC
+          format: "YYYY-MM-DD-HH-mm-ss"
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Use node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+      - run: npm ci
+      - run: npm run build --if-present
+      - run: npm test
+
+      - name: Create pull request
+        uses: mohsen-deriv/create-pr-action@v0.0.1
+        env:
+          API_TOKEN_GITHUB: ${{ secrets.API_TOKEN_GITHUB }}
+        with:
+          source_folder: "dist"
+          destination_repo: "mohsen-deriv/learn-actions"
+          destination_base_branch: "main"
+          destination_head_branch: ${{format( 'update-quill-tailwind-tokens-{0}', steps.time.outputs.time )}}
+          commit_message_title: "chore"
+          user_email: "mohsen@regentmarkets.com"
+          user_name: "mohsen-deriv"
+          pull_request_reviewers: "mohsen-deriv,prince-deriv,yashim-deriv"
